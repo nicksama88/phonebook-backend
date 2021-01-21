@@ -1,5 +1,9 @@
+require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
+
+const Person = require('./models/person')
+
 const app = express()
 
 app.use(cors())
@@ -50,7 +54,9 @@ app.get('/', (request, response) => {
 
 // return full persons list
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(person => {
+        response.json(person)
+    })
 })
 
 // return general info
@@ -64,14 +70,9 @@ app.get('/info', (request, response) => {
 
 // return data for specific user based on ID
 app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
+    Person.findById(request.params.id).then(person => {
         response.json(person)
-    } else {
-        response.status(404).end()
-    }
+    })
 })
 
 // deleting one person from book
@@ -107,15 +108,14 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    const newPerson = {
-        id: generateId(),
+    const person = new Person({
         name: body.name,
         number: body.number
-    }
+    })
 
-    persons = persons.concat(newPerson)
-
-    response.json(newPerson)
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
 })
 
 app.use(unknownEndpoint)
