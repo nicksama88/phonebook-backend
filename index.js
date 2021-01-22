@@ -70,34 +70,20 @@ const generateId = () => {
   return Math.floor(Math.random() * Math.floor(1000))
 }
 
-// adding new names to phone book with random phone number
-app.post('/api/persons', (request, response) => {
+// adding new names to phone book
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
-  if (!body.name || !body.number) {
-    return response.status(400).json({
-      error: 'body of request missing name or number'
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  })
+
+  person.save()
+    .then(savedNote => {
+      response.json(savedNote)
     })
-  }
-
-  Person.findOne({ name: body.name })
-    .then(foundPerson => {
-      if (foundPerson !== null) {
-        return response.status(400).json({
-          error: `'${foundPerson.name}' already in book`
-      })
-      } else {
-
-        const person = new Person({
-          name: body.name,
-          number: body.number,
-        })
-
-        person.save().then(savedPerson => {
-          response.json(savedPerson)
-        })
-      }
-    })
+    .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
@@ -108,7 +94,7 @@ app.put('/api/persons/:id', (request, response, next) => {
     number: body.number
   }
 
-  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+  Person.findByIdAndUpdate(request.params.id, person, { new: true, runValidators: true, context: 'query' })
     .then(updatedPerson => {
       response.json(updatedPerson)
     })
@@ -126,7 +112,9 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError' && error.kind == 'ObjectId') {
     return response.status(400).send({ error: 'malformatted id' })
-  } 
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
 
   next(error)
 }
