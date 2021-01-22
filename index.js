@@ -60,7 +60,7 @@ app.get('/api/persons/:id', (request, response, next) => {
 app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndRemove(request.params.id)
     .then(result => {
-      respond.status(204).end()
+      response.status(204).end()
     })
     .catch(error => next(error))
 })
@@ -80,20 +80,24 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  if (persons.some(person => person.name.toLowerCase() === body.name.toLowerCase())) {
-    return response.status(400).json({
-      error: `'${body.name}' already in book`
+  Person.findOne({ name: body.name })
+    .then(foundPerson => {
+      if (foundPerson !== null) {
+        return response.status(400).json({
+          error: `'${foundPerson.name}' already in book`
+      })
+      } else {
+
+        const person = new Person({
+          name: body.name,
+          number: body.number,
+        })
+
+        person.save().then(savedPerson => {
+          response.json(savedPerson)
+        })
+      }
     })
-  }
-
-  const person = new Person({
-    name: body.name,
-    number: body.number
-  })
-
-  person.save().then(savedPerson => {
-    response.json(savedPerson)
-  })
 })
 
 const unknownEndpoint = (request, response) => {

@@ -13,3 +13,12 @@ content-type: application/json
     "name": "testing name",
     "number": 12345
 }
+
+###
+
+POST http://localhost:3001/api/persons/
+content-type: application/json
+
+{
+    "name": "testing name"
+}
